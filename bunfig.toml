@@ -1,0 +1,25 @@
+# Bun configuration for YouTube Outlier Discovery Tool
+
+[install]
+# Use the latest compatible versions
+peer = true
+dev = true
+optional = false
+
+[install.lockfile]
+# Save exact versions
+save = true
+print = "yarn"
+
+[test]
+# Test configuration
+root = "./"
+preload = ["./test/setup.js"]
+coverage = true
+coverageReporter = ["text", "lcov"]
+coverageThreshold = 80
+timeout = 30000
+
+[run]
+# Hot reload for development
+watch = true

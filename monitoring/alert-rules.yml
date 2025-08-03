@@ -1,0 +1,198 @@
+groups:
+  - name: outlier-discovery-alerts
+    rules:
+      # Service availability
+      - alert: ServiceDown
+        expr: up{job="outlier-discovery"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Outlier Discovery service is down"
+          description: "The Outlier Discovery service has been down for more than 1 minute."
+
+      # High error rate
+      - alert: HighErrorRate
+        expr: (rate(outlier_http_requests_total{status_code=~"5.."}[5m]) / rate(outlier_http_requests_total[5m])) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }}% over the last 5 minutes."
+
+      - alert: CriticalErrorRate
+        expr: (rate(outlier_http_requests_total{status_code=~"5.."}[5m]) / rate(outlier_http_requests_total[5m])) * 100 > 10
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical error rate detected"
+          description: "Error rate is {{ $value }}% over the last 5 minutes."
+
+      # High response time
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(outlier_http_request_duration_seconds_bucket[5m])) > 5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s over the last 5 minutes."
+
+      - alert: CriticalResponseTime
+        expr: histogram_quantile(0.95, rate(outlier_http_request_duration_seconds_bucket[5m])) > 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical response time detected"
+          description: "95th percentile response time is {{ $value }}s over the last 5 minutes."
+
+      # YouTube API quota
+      - alert: YouTubeQuotaWarning
+        expr: (outlier_youtube_api_quota_used_total / 10000) * 100 > 80
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "YouTube API quota usage high"
+          description: "YouTube API quota usage is {{ $value }}% of daily limit."
+
+      - alert: YouTubeQuotaCritical
+        expr: (outlier_youtube_api_quota_used_total / 10000) * 100 > 95
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "YouTube API quota usage critical"
+          description: "YouTube API quota usage is {{ $value }}% of daily limit."
+
+      # Database connectivity
+      - alert: DatabaseConnectionFailure
+        expr: outlier_database_connections_active == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection failure"
+          description: "No active database connections detected."
+
+      # High database query time
+      - alert: SlowDatabaseQueries
+        expr: histogram_quantile(0.95, rate(outlier_database_query_duration_seconds_bucket[5m])) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow database queries detected"
+          description: "95th percentile database query time is {{ $value }}s."
+
+      # Memory usage
+      - alert: HighMemoryUsage
+        expr: (outlier_memory_usage_bytes{type="heap_used"} / outlier_memory_usage_bytes{type="heap_total"}) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}% of heap total."
+
+      - alert: CriticalMemoryUsage
+        expr: (outlier_memory_usage_bytes{type="heap_used"} / outlier_memory_usage_bytes{type="heap_total"}) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical memory usage"
+          description: "Memory usage is {{ $value }}% of heap total."
+
+      # Analysis processing time
+      - alert: SlowAnalysisProcessing
+        expr: histogram_quantile(0.95, rate(outlier_analysis_processing_time_seconds_bucket[5m])) > 120
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow analysis processing"
+          description: "95th percentile analysis processing time is {{ $value }}s."
+
+      # YouTube API errors
+      - alert: YouTubeAPIErrors
+        expr: rate(outlier_youtube_api_calls_total{status="error"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "YouTube API errors detected"
+          description: "YouTube API error rate is {{ $value }} errors/sec."
+
+      # Redis connectivity
+      - alert: RedisConnectionFailure
+        expr: outlier_redis_connections_active == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis connection failure"
+          description: "No active Redis connections detected."
+
+      # WebSocket connection issues
+      - alert: NoWebSocketConnections
+        expr: outlier_websocket_connections_active == 0 and rate(outlier_http_requests_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No WebSocket connections"
+          description: "No active WebSocket connections despite HTTP traffic."
+
+      # Authentication failures
+      - alert: HighAuthenticationFailures
+        expr: rate(outlier_authentication_attempts_total{status="error"}[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High authentication failure rate"
+          description: "Authentication failure rate is {{ $value }} failures/sec."
+
+  - name: system-alerts
+    rules:
+      # CPU usage (requires node-exporter)
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}."
+
+      - alert: CriticalCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical CPU usage"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}."
+
+      # Disk space (requires node-exporter)
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 20
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space is {{ $value }}% full on {{ $labels.instance }}:{{ $labels.mountpoint }}."
+
+      - alert: CriticalDiskSpace
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical disk space"
+          description: "Disk space is {{ $value }}% full on {{ $labels.instance }}:{{ $labels.mountpoint }}."

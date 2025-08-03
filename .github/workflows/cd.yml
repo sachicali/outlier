@@ -1,0 +1,232 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  BUN_VERSION: 1.2.19
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: ${{ env.BUN_VERSION }}
+    
+    - name: Get version
+      id: version
+      run: |
+        VERSION=$(date +%Y%m%d)-$(git rev-parse --short HEAD)
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Deploying version: $VERSION"
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.bun/install/cache
+          node_modules
+          client/node_modules
+          server/node_modules
+        key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+        restore-keys: |
+          ${{ runner.os }}-bun-
+    
+    - name: Install dependencies
+      run: bun run install:all
+    
+    - name: Run tests
+      run: |
+        cd server && bun test
+        cd ../client && bun test
+      env:
+        NODE_ENV: test
+    
+    - name: Build client
+      run: cd client && bun run build
+      env:
+        NODE_ENV: production
+        NEXT_PUBLIC_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+    
+    - name: Upload client build
+      uses: actions/upload-artifact@v3
+      with:
+        name: client-build-${{ steps.version.outputs.version }}
+        path: client/.next
+        retention-days: 7
+
+  deploy-client:
+    name: Deploy Client to Vercel
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+      url: ${{ steps.deploy.outputs.url }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download client build
+      uses: actions/download-artifact@v3
+      with:
+        name: client-build-${{ needs.build-and-test.outputs.version }}
+        path: client/.next
+    
+    - name: Deploy to Vercel
+      id: deploy
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+        vercel-args: '--prod'
+        working-directory: ./client
+        scope: ${{ secrets.VERCEL_SCOPE }}
+    
+    - name: Add deployment annotation
+      run: |
+        echo "::notice title=Client Deployed::Client deployed to ${{ steps.deploy.outputs.url }}"
+
+  deploy-server:
+    name: Deploy Server
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v1
+      with:
+        bun-version: ${{ env.BUN_VERSION }}
+    
+    - name: Install Railway CLI
+      run: |
+        curl -fsSL https://railway.app/install.sh | sh
+        echo "$HOME/.railway/bin" >> $GITHUB_PATH
+    
+    - name: Deploy to Railway
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      run: |
+        cd server
+        railway up --service youtube-outlier-api
+    
+    - name: Run database migrations
+      env:
+        DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+      run: |
+        cd server
+        bun run db:migrate:prod
+    
+    - name: Health check
+      run: |
+        echo "Waiting for deployment to be ready..."
+        sleep 30
+        
+        response=$(curl -s -o /dev/null -w "%{http_code}" ${{ secrets.PRODUCTION_API_URL }}/health)
+        if [ $response -eq 200 ]; then
+          echo "✅ Server health check passed"
+        else
+          echo "❌ Server health check failed with status $response"
+          exit 1
+        fi
+
+  post-deployment:
+    name: Post Deployment Tasks
+    runs-on: ubuntu-latest
+    needs: [deploy-client, deploy-server]
+    if: success()
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Notify deployment success
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        text: |
+          🚀 Deployment Successful!
+          Version: ${{ needs.build-and-test.outputs.version }}
+          Environment: ${{ github.event.inputs.environment || 'production' }}
+          Client: ${{ needs.deploy-client.outputs.url }}
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+      if: always()
+    
+    - name: Create GitHub release
+      if: github.event.inputs.environment == 'production' || github.event_name == 'push'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ needs.build-and-test.outputs.version }}
+        name: Release ${{ needs.build-and-test.outputs.version }}
+        body: |
+          ## 🚀 Deployment Information
+          
+          - **Version**: ${{ needs.build-and-test.outputs.version }}
+          - **Environment**: Production
+          - **Commit**: ${{ github.sha }}
+          
+          ## 📝 Changes
+          
+          See [commit history](https://github.com/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}) for details.
+        draft: false
+        prerelease: false
+    
+    - name: Update monitoring dashboards
+      run: |
+        echo "Updating deployment markers in monitoring systems..."
+        # Add deployment markers to Grafana/DataDog/etc
+        # This would typically use their APIs to add annotations
+
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-client, deploy-server]
+    if: failure()
+    
+    steps:
+    - name: Rollback notification
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        text: |
+          ❌ Deployment Failed!
+          Version: ${{ needs.build-and-test.outputs.version }}
+          Environment: ${{ github.event.inputs.environment || 'production' }}
+          Action: Initiating rollback...
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+    
+    - name: Trigger rollback workflow
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.actions.createWorkflowDispatch({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            workflow_id: 'rollback.yml',
+            ref: 'main',
+            inputs: {
+              environment: '${{ github.event.inputs.environment || 'production' }}'
+            }
+          })

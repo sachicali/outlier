@@ -1,0 +1,119 @@
+{
+  "description": "Example configuration for different content niches",
+  "examples": {
+    "minecraft_content": {
+      "searchQueries": [
+        "minecraft funny moments",
+        "minecraft builds creative",
+        "minecraft survival let's play",
+        "minecraft redstone tutorials",
+        "minecraft mod showcase"
+      ],
+      "gamePatterns": [
+        { "pattern": "minecraft", "flags": "gi" },
+        { "pattern": "creeper", "flags": "gi" },
+        { "pattern": "enderdragon", "flags": "gi" },
+        { "pattern": "nether", "flags": "gi" }
+      ],
+      "channelCriteria": {
+        "minSubscribers": 5000,
+        "maxSubscribers": 200000,
+        "excludeTitleKeywords": ["music", "song", "parody"]
+      }
+    },
+    "fortnite_content": {
+      "searchQueries": [
+        "fortnite battle royale",
+        "fortnite creative mode",
+        "fortnite funny moments",
+        "fortnite wins compilation",
+        "fortnite zero build"
+      ],
+      "gamePatterns": [
+        { "pattern": "fortnite", "flags": "gi" },
+        { "pattern": "battle royale", "flags": "gi" },
+        { "pattern": "victory royale", "flags": "gi" },
+        { "pattern": "tilted towers", "flags": "gi" }
+      ],
+      "channelCriteria": {
+        "minSubscribers": 10000,
+        "maxSubscribers": 500000,
+        "excludeTitleKeywords": ["music", "dance", "emote only"]
+      }
+    },
+    "educational_content": {
+      "searchQueries": [
+        "science experiments kids",
+        "math tutorials fun",
+        "history documentary animated",
+        "coding for beginners",
+        "physics explained simple"
+      ],
+      "gamePatterns": [
+        { "pattern": "tutorial", "flags": "gi" },
+        { "pattern": "lesson", "flags": "gi" },
+        { "pattern": "explained", "flags": "gi" }
+      ],
+      "brandFit": {
+        "threshold": 7,
+        "baseScore": 6,
+        "positiveIndicators": [
+          { "keywords": ["educational", "learning", "tutorial"], "score": 2 },
+          { "keywords": ["kids", "children", "family"], "score": 1.5 },
+          { "keywords": ["fun", "easy", "simple"], "score": 1 }
+        ],
+        "negativeIndicators": [
+          { "keywords": ["complex", "advanced", "expert"], "score": -1 }
+        ]
+      },
+      "channelCriteria": {
+        "minSubscribers": 1000,
+        "maxSubscribers": 100000,
+        "excludeTitleKeywords": ["adult", "18+", "mature"],
+        "excludeDescriptionKeywords": ["not suitable for children"]
+      }
+    },
+    "cooking_content": {
+      "searchQueries": [
+        "easy recipes quick",
+        "cooking tutorials beginner",
+        "baking simple recipes",
+        "meal prep ideas",
+        "food challenges fun"
+      ],
+      "gamePatterns": [
+        { "pattern": "recipe", "flags": "gi" },
+        { "pattern": "cooking", "flags": "gi" },
+        { "pattern": "baking", "flags": "gi" },
+        { "pattern": "kitchen", "flags": "gi" }
+      ],
+      "brandFit": {
+        "threshold": 6,
+        "baseScore": 5,
+        "positiveIndicators": [
+          { "keywords": ["easy", "simple", "quick"], "score": 1 },
+          { "keywords": ["family", "kids", "beginner"], "score": 1 },
+          { "keywords": ["healthy", "nutritious"], "score": 0.5 }
+        ]
+      },
+      "outlierThreshold": 15,
+      "maxResults": 30
+    }
+  },
+  "instructions": {
+    "usage": "Copy one of the example configurations above and use it as a starting point",
+    "commands": [
+      "To use minecraft configuration: node configManager.js import minecraft-config.json",
+      "To update search queries only: echo '[\"new\", \"queries\"]' | node configManager.js update-queries",
+      "To view current config: node configManager.js view",
+      "To reset to defaults: node configManager.js reset"
+    ],
+    "customization_tips": [
+      "Adjust outlierThreshold based on niche competitiveness (lower = more results)",
+      "Modify subscriber ranges based on target channel size",
+      "Add specific game/topic patterns for better exclusion filtering",
+      "Customize brand fit criteria to match your content style",
+      "Use environment variables for production deployments"
+    ]
+  }
+}

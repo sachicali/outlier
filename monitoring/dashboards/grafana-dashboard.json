@@ -1,0 +1,377 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "YouTube Outlier Discovery - Application Monitoring",
+    "tags": ["outlier-discovery", "youtube", "monitoring"],
+    "style": "dark",
+    "timezone": "browser",
+    "refresh": "30s",
+    "schemaVersion": 16,
+    "version": 1,
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Overview",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=\"outlier-discovery\"}",
+            "legendFormat": "Service Status"
+          },
+          {
+            "expr": "process_uptime_seconds{job=\"outlier-discovery\"}",
+            "legendFormat": "Uptime"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 8,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "HTTP Request Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(outlier_http_requests_total[5m])",
+            "legendFormat": "{{method}} {{route}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 4
+        },
+        "yAxes": [
+          {
+            "label": "Requests/sec",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "HTTP Response Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(outlier_http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(outlier_http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 4
+        },
+        "yAxes": [
+          {
+            "label": "Seconds",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(outlier_http_requests_total{status_code=~\"4..|5..\"}[5m]) / rate(outlier_http_requests_total[5m]) * 100",
+            "legendFormat": "Error Rate %"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 12
+        },
+        "yAxes": [
+          {
+            "label": "Percentage",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "type": "avg",
+                "params": []
+              },
+              "evaluator": {
+                "params": [5],
+                "type": "gt"
+              }
+            }
+          ],
+          "executionErrorState": "alerting",
+          "for": "5m",
+          "frequency": "10s",
+          "handler": 1,
+          "name": "High Error Rate",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      },
+      {
+        "id": 5,
+        "title": "YouTube API Quota Usage",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "outlier_youtube_api_quota_used_total",
+            "legendFormat": "Quota Used"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 8,
+          "x": 0,
+          "y": 20
+        },
+        "thresholds": [
+          {
+            "color": "green",
+            "value": null
+          },
+          {
+            "color": "yellow",
+            "value": 8000
+          },
+          {
+            "color": "red",
+            "value": 9500
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "YouTube API Call Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(outlier_youtube_api_calls_total[5m])",
+            "legendFormat": "{{operation}} - {{status}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        },
+        "yAxes": [
+          {
+            "label": "Calls/sec",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "YouTube API Response Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(outlier_youtube_api_response_time_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(outlier_youtube_api_response_time_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        },
+        "yAxes": [
+          {
+            "label": "Seconds",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Analysis Operations",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(outlier_analysis_requests_total[5m])",
+            "legendFormat": "{{type}} - {{status}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 32
+        },
+        "yAxes": [
+          {
+            "label": "Operations/sec",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Analysis Processing Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(outlier_analysis_processing_time_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(outlier_analysis_processing_time_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 32
+        },
+        "yAxes": [
+          {
+            "label": "Seconds",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Database Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(outlier_database_query_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "outlier_database_connections_active",
+            "legendFormat": "Active Connections"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 40
+        },
+        "yAxes": [
+          {
+            "label": "Seconds / Connections",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "outlier_memory_usage_bytes{type=\"heap_used\"} / 1024 / 1024",
+            "legendFormat": "Heap Used (MB)"
+          },
+          {
+            "expr": "outlier_memory_usage_bytes{type=\"heap_total\"} / 1024 / 1024",
+            "legendFormat": "Heap Total (MB)"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 40
+        },
+        "yAxes": [
+          {
+            "label": "Megabytes",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Outliers Found",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "increase(outlier_videos_found_total[1h])",
+            "legendFormat": "Last Hour"
+          },
+          {
+            "expr": "increase(outlier_videos_found_total[24h])",
+            "legendFormat": "Last 24h"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 8,
+          "x": 0,
+          "y": 48
+        }
+      },
+      {
+        "id": 13,
+        "title": "Active Users",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "outlier_active_users",
+            "legendFormat": "Current"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 8,
+          "x": 8,
+          "y": 48
+        }
+      },
+      {
+        "id": 14,
+        "title": "WebSocket Connections",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "outlier_websocket_connections_active",
+            "legendFormat": "Active"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 8,
+          "x": 16,
+          "y": 48
+        }
+      }
+    ]
+  }
+}
