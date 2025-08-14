@@ -20,7 +20,7 @@ Frontend (React/Next.js)
 ├── Results Dashboard
 └── Export Tools
 
-Backend (Node.js/Express)
+Backend (Python/Flask)
 ├── YouTube API Service
 ├── Outlier Detection Engine
 ├── Brand Classification
@@ -35,28 +35,40 @@ Database (PostgreSQL + Redis)
 
 ## 🚀 Quick Start
 
-1. **Installation**
+1. **Prerequisites**
+   - [Bun](https://bun.sh/) for frontend
+   - [uv](https://github.com/astral-sh/uv) for Python dependency management
+   - Python 3.8.1+ for backend (3.11 recommended for best compatibility)
+   - Redis for caching
+   - YouTube Data API key
+
+2. **Installation**
    ```bash
-   npm install
-   cd client && npm install
-   cd ../server && npm install
+   # Install all dependencies
+   make install
+   
+   # Or install separately
+   cd client && bun install
+   make install-python
    ```
 
-2. **Environment Setup**
+3. **Environment Setup**
    ```bash
    cp .env.example .env
-   # Add your YouTube Data API key
+   # Add your YouTube Data API key and other configurations
    ```
 
-3. **Development**
+4. **Development**
    ```bash
-   npm run dev     # Start both client and server
+   make dev     # Start both client and server
+   make dev-client  # Start only client
+   make dev-server  # Start only server
    ```
 
-4. **Production**
+5. **Production**
    ```bash
-   npm run build
-   npm start
+   make build   # Build both client and server
+   make start   # Start in production mode
    ```
 
 ## 📊 How It Works
@@ -84,9 +96,10 @@ Database (PostgreSQL + Redis)
 ## 🛠️ Technical Stack
 
 - **Frontend**: React 18, Next.js 14, Tailwind CSS, Lucide Icons
-- **Backend**: Node.js, Express, YouTube Data API v3
+- **Backend**: Python 3.11, Flask, YouTube Data API v3
 - **Database**: PostgreSQL, Redis (caching)
-- **Deployment**: Vercel (frontend), Railway (backend)
+- **Dependency Management**: uv (Python), Bun (JavaScript)
+- **Deployment**: Vercel (frontend), Docker (backend)
 - **Analytics**: Custom outlier detection algorithms
 
 ## 📈 Performance Metrics
@@ -107,15 +120,55 @@ Key parameters for customization:
 ## 📝 API Documentation
 
 ### Core Endpoints
-- `POST /api/analysis/start` - Begin outlier discovery
-- `GET /api/analysis/status/:id` - Check processing status
-- `GET /api/analysis/results/:id` - Retrieve final results
-- `GET /api/exclusions/build` - Generate exclusion list
+- `POST /api/outlier/start` - Begin outlier discovery
+- `GET /api/outlier/status/:id` - Check processing status
+- `GET /api/outlier/results/:id` - Retrieve final results
+- `GET /api/outlier/list` - List all analyses
+
+### Authentication Endpoints
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - User login
+- `POST /api/auth/refresh` - Refresh token
+- `GET /api/auth/profile` - Get user profile
 
 ### Webhook Integration
 - Real-time progress updates via WebSocket
 - Export notifications and completion alerts
 - Error handling and retry mechanisms
+
+## 🏗️ Development Workflow
+
+### Makefile Commands
+```bash
+make install      # Install all dependencies
+make dev         # Start development servers
+make build       # Build for production
+make test        # Run all tests
+make format      # Format code
+make lint        # Lint code
+make clean       # Clean cache files
+```
+
+### Python Development
+```bash
+make install-python   # Install Python dependencies with uv
+make test-python      # Run Python tests
+make format-python    # Format Python code with black
+make lint-python      # Lint Python code with flake8
+```
+
+## 🐳 Docker Support
+
+The project includes Docker support for easy deployment:
+
+```bash
+# Build and run with docker-compose
+docker-compose up --build
+
+# Build individual images
+docker build -t outlier-client ./client
+docker build -t outlier-server .
+```
 
 ## 🤝 Contributing
 

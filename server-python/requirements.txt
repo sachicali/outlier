@@ -1,8 +1,39 @@
-Flask
-Flask-SocketIO
-python-dotenv
-google-api-python-client
-redis
-psycopg2-binary
-Flask-Cors
-Flask-Talisman
+# Core dependencies
+Flask==2.3.2
+Flask-SocketIO==5.3.6
+python-dotenv==1.0.0
+google-api-python-client==2.86.0
+redis==4.5.4
+Flask-Cors==3.0.10
+Flask-Talisman==1.1.0
+PyJWT==2.7.0
+python-socketio==5.7.2
+eventlet==0.33.3
+
+# 2FA and security dependencies
+pyotp==2.9.0
+qrcode[pil]==7.4.2
+bcrypt==4.0.1
+cryptography==41.0.3
+Flask-Limiter==3.5.0
+
+# Database adapter - choose one based on your platform:
+# For most platforms (Linux/macOS/Windows with proper build tools):
+# psycopg2-binary==2.9.9
+# For Windows users having build issues:
+# conda install psycopg2
+# Or use alternative installation methods
+
+# Export dependencies
+openpyxl==3.1.2
+reportlab==4.0.4
+jinja2==3.1.2
+weasyprint==60.0
+matplotlib==3.7.2
+seaborn==0.12.2
+pandas==2.0.3
+
+# Development dependencies
+pytest==7.4.0
+black==23.3.0
+flake8==6.0.0

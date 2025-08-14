@@ -3,13 +3,13 @@ import { Shield, AlertTriangle, Clock } from 'lucide-react';
 import { apiClient } from '../../utils/apiClient';
 
 interface TwoFactorVerificationProps {
-  identifier: string; // email or username
+  sessionId: string;
   onSuccess: (data: any) => void;
   onCancel: () => void;
 }
 
 const TwoFactorVerification: React.FC<TwoFactorVerificationProps> = ({
-  identifier,
+  sessionId,
   onSuccess,
   onCancel,
 }) => {
@@ -57,26 +57,21 @@ const TwoFactorVerification: React.FC<TwoFactorVerificationProps> = ({
       setLoading(true);
       setError('');
 
-      const response = await apiClient.post('/auth/2fa/verify', {
-        token: code,
-        identifier,
-        isBackupCode,
-      });
+      const endpoint = isBackupCode ? '/auth/2fa/recovery' : '/auth/2fa/verify';
+      const payload = isBackupCode 
+        ? { sessionId, backupCode: code }
+        : { sessionId, totpCode: code };
+      
+      const response = await apiClient.post(endpoint, payload);
 
-      if (response.data.success) {
-        onSuccess(response.data.data);
-      } else {
-        setError(response.data.message || 'Invalid verification code');
-        if (response.data.remainingLockout) {
-          setRemainingLockout(Math.ceil(response.data.remainingLockout / 1000));
-        }
-      }
+      onSuccess(response.data);
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Verification failed';
+      const errorMessage = err.response?.data?.error || 'Verification failed';
       setError(errorMessage);
       
-      if (err.response?.data?.remainingLockout) {
-        setRemainingLockout(Math.ceil(err.response.data.remainingLockout / 1000));
+      // Handle rate limiting
+      if (err.response?.status === 429) {
+        setRemainingLockout(60); // Set 1 minute lockout for rate limiting
       }
     } finally {
       setLoading(false);

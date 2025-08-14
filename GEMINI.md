@@ -1,3 +1,277 @@
+# YouTube Outlier Discovery Tool - Gemini Index
+
+## Project Overview
+
+The YouTube Outlier Discovery Tool is an intelligent web application that discovers high-performing YouTube videos from channels adjacent to your exclusion list, helping content creators identify trending opportunities and replicable content formats.
+
+**Important Note**: While basic security measures are in place (Helmet, CORS), the application lacks user authentication and authorization, which is a must for a production environment.
+
+### Core Purpose
+- Help content creators avoid saturated markets while finding adjacent opportunities
+- Identify videos performing 2-5x above channel average
+- Provide statistical analysis for content strategy decisions
+- Enable brand alignment with discovered opportunities
+
+## Technology Stack
+
+### Frontend (client/)
+- **Framework**: Next.js 14 with React 18
+- **Styling**: Tailwind CSS with responsive design
+- **UI Components**: Lucide React icons
+- **State Management**: React Context API
+- **Real-time Communication**: Socket.IO client
+- **Form Handling**: React Hook Form
+- **Data Visualization**: Recharts
+- **Error Handling**: Custom error boundaries and context
+
+### Backend (server/)
+- **Runtime**: Node.js with Express.js
+- **Authentication**: JWT-based with role-based access control (RBAC)
+- **Data Storage**: PostgreSQL with Redis caching
+- **Queue Processing**: BullMQ for background jobs
+- **External APIs**: YouTube Data API v3
+- **Monitoring**: Custom monitoring with Prometheus metrics
+- **Security**: Comprehensive middleware stack
+- **Logging**: Winston with structured logging
+- **Error Tracking**: Sentry integration
+
+### Alternative Backend (server-python/)
+- **Framework**: Flask with Socket.IO
+- **Security**: Flask-Talisman for security headers
+
+## Core Algorithms
+
+### Outlier Detection Algorithm
+1. **Performance Score Calculation**: `(Views ÷ Subscribers) × 100`
+2. **Statistical Analysis**: Identifies videos performing 2-5x above channel average
+3. **Recency Multiplier**: Applies weighting based on publication date
+4. **Trending Factor**: Considers growth rate and engagement metrics
+
+### Brand Fit Algorithm
+1. **Content Analysis**: Evaluates titles, descriptions, and tags
+2. **Pattern Matching**: Uses configurable rules for brand alignment
+3. **Scoring System**: Rates compatibility on a 0-10 scale
+4. **Exclusion Filtering**: Removes content that conflicts with brand
+
+### Channel Discovery Algorithm
+1. **Search Queries**: Uses configurable terms to find adjacent channels
+2. **Subscriber Filtering**: Targets channels in 10k-500k range
+3. **Validation Criteria**: Ensures content quality and consistency
+4. **Exclusion Processing**: Avoids channels with overlapping content
+
+## Data Flow
+
+### Analysis Process
+1. **Exclusion Database Building**
+   - Analyze competitor channels (last 7 days)
+   - Extract games/content types being covered
+   - Create comprehensive exclusion list
+
+2. **Adjacent Channel Discovery**
+   - Search for channels in target subscriber range
+   - Filter by brand adjacency and content quality
+   - Validate upload consistency and engagement
+
+3. **Outlier Detection**
+   - Calculate performance scores for videos
+   - Identify statistical outliers (>20-50 threshold)
+   - Apply recency and trending multipliers
+
+4. **Brand Compatibility Scoring**
+   - Analyze thumbnail styles and title patterns
+   - Score content tone and audience alignment
+   - Filter for replicable content formats
+
+### Real-time Processing
+- WebSocket communication for progress updates
+- Background job queue for heavy processing
+- Status tracking in database
+- Result caching for performance
+
+## API Design
+
+### RESTful Endpoints
+- Standard HTTP methods (GET, POST, PUT, DELETE)
+- JSON request/response format
+- Comprehensive error handling
+- Rate limiting and security measures
+
+### WebSocket Communication
+- Real-time progress updates
+- Analysis status notifications
+- Event-driven architecture
+- Room-based messaging
+
+### Authentication & Authorization
+- JWT token-based authentication
+- Role-based access control (user/admin)
+- API key management with scopes
+- Session management with refresh tokens
+
+## Configuration Management
+
+### Environment Variables
+- API keys and service credentials
+- Database connection strings
+- Server configuration parameters
+- Feature flags and toggles
+
+### Content Configuration
+- Game/content pattern definitions
+- Brand fit scoring rules
+- Channel validation criteria
+- Search query templates
+
+### Processing Parameters
+- Subscriber range limits
+- Time window settings
+- Outlier threshold values
+- Batch processing sizes
+
+## Security Implementation
+
+**Important Note**: While basic security measures are in place (Helmet, CORS), the application lacks user authentication and authorization, which is a must for a production environment.
+
+### Data Protection
+- Input validation and sanitization
+- SQL injection prevention
+- XSS attack mitigation
+- CSRF protection
+
+### Access Control
+- JWT token validation
+- Role-based permissions
+- API key rate limiting
+- Session management
+
+### Infrastructure Security
+- HTTPS enforcement
+- Security headers
+- Request size limits
+- Logging and monitoring
+
+## Performance Optimization
+
+### Caching Strategy
+- Redis for session storage
+- API response caching
+- Database query optimization
+- Content delivery optimization
+
+### Database Design
+- Normalized schema design
+- Indexing strategies
+- Connection pooling
+- Query optimization
+
+### Processing Efficiency
+- Concurrent request handling
+- Background job processing
+- Batch operations
+- Resource pooling
+
+## Testing Strategy
+
+### Unit Testing
+- Service layer testing
+- Utility function validation
+- Algorithm verification
+- Error handling coverage
+
+### Integration Testing
+- API endpoint testing
+- Database integration
+- External service mocking
+- Authentication flow validation
+
+### End-to-End Testing
+- User workflow validation
+- UI component testing
+- Data flow verification
+- Performance benchmarking
+
+## Deployment Architecture
+
+### Development Environment
+- Local development setup
+- Docker containerization
+- Environment-specific configuration
+- Hot reloading and debugging
+
+### Production Deployment
+- Vercel for frontend hosting
+- Railway/Heroku for backend services
+- PostgreSQL database hosting
+- Redis caching service
+
+### CI/CD Pipeline
+- Automated testing
+- Code quality checks
+- Security scanning
+- Deployment automation
+
+## Monitoring & Observability
+
+### Application Metrics
+- Request/response timing
+- Error rates and patterns
+- Resource utilization
+- User activity tracking
+
+### Infrastructure Monitoring
+- Server health checks
+- Database performance
+- Cache hit rates
+- Network latency
+
+### Error Tracking
+- Exception reporting
+- Stack trace analysis
+- User impact assessment
+- Automated alerting
+
+## Future Development Roadmap
+
+### Short-term Goals
+- Enhanced machine learning for brand fit prediction
+- Automated competitor monitoring
+- Historical trend analysis
+- Advanced analytics dashboard
+
+### Long-term Vision
+- Team collaboration features
+- Mobile app development
+- Cross-platform content discovery
+- Predictive analytics
+
+### Technical Improvements
+- Database persistence enhancements
+- Caching mechanism improvements
+- Search capability expansion
+- Third-party integration expansion
+
+## Key Components Index
+
+### Frontend Components
+- Dashboard with real-time updates
+- Configuration panels for analysis parameters
+- Results visualization with charts
+- Export tools for data sharing
+
+### Backend Services
+- YouTube API service integration
+- Outlier detection engine
+- Brand classification system
+- Data caching layer
+
+### Data Models
+- Channel metadata storage
+- Video performance tracking
+- Exclusion list management
+- User analysis history
+
+This Gemini index provides a comprehensive technical overview of the YouTube Outlier Discovery Tool, focusing on the implementation details, algorithms, and system architecture.
+---
 
 # Gemini Codebase Analysis
 
@@ -35,8 +309,8 @@ The application follows a classic client-server architecture:
 -   **Language**: **JavaScript (ES6+)**.
 -   **API**: A RESTful API is exposed to the client for starting analysis, checking status, and retrieving results.
 -   **Services**: The business logic is well-encapsulated in services:
-    -   `outlierDetectionService.js`: Contains the core logic for building exclusion lists, discovering adjacent channels, and analyzing for outliers.
-    -   `youtubeService.js`: A dedicated service to interact with the YouTube Data API v3, including caching logic.
+   -   `outlierDetectionService.js`: Contains the core logic for building exclusion lists, discovering adjacent channels, and analyzing for outliers.
+   -   `youtubeService.js`: A dedicated service to interact with the YouTube Data API v3, including caching logic.
 -   **Real-time Communication**: Uses **Socket.IO** to send progress updates to the client.
 -   **Caching**: **Redis** is used for caching YouTube API responses to reduce quota usage and improve performance.
 -   **Logging**: **Winston** is used for logging, with separate files for errors and combined logs.
@@ -68,11 +342,11 @@ The application follows a classic client-server architecture:
 
 -   `src/index.js`: The main entry point for the Express server. It sets up middleware (CORS, Helmet, Morgan, etc.), initializes Socket.IO, and defines the API routes.
 -   `src/routes/`:
-    -   `channels.js`: Defines routes for searching channels, getting channel info, and retrieving channel videos.
-    -   `outlier.js`: Defines the core API endpoints for starting an analysis, checking its status, and retrieving results. It also handles the in-memory storage of analysis results.
+   -   `channels.js`: Defines routes for searching channels, getting channel info, and retrieving channel videos.
+   -   `outlier.js`: Defines the core API endpoints for starting an analysis, checking its status, and retrieving results. It also handles the in-memory storage of analysis results.
 -   `src/services/`:
-    -   `outlierDetectionService.js`: The heart of the application's business logic. It orchestrates the entire analysis process, from building the exclusion list to discovering adjacent channels and calculating outlier scores.
-    -   `youtubeService.js`: A well-designed service that abstracts all interactions with the YouTube Data API. It includes caching logic using Redis to minimize API quota usage.
+   -   `outlierDetectionService.js`: The heart of the application's business logic. It orchestrates the entire analysis process, from building the exclusion list to discovering adjacent channels and calculating outlier scores.
+   -   `youtubeService.js`: A well-designed service that abstracts all interactions with the YouTube Data API. It includes caching logic using Redis to minimize API quota usage.
 -   `src/middleware/errorHandler.js`: A centralized error handler for the Express application.
 -   `src/utils/logger.js`: Configures the Winston logger.
 -   `package.json`: Defines the server-side dependencies, including `express`, `googleapis`, `redis`, and `socket.io`.

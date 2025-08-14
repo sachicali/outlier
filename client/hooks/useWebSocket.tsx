@@ -21,7 +21,7 @@ interface WebSocketState {
 
 const useWebSocket = (options: WebSocketOptions = {}) => {
   const {
-    url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+    url = 'http://localhost:5000',
     autoConnect = true,
     reconnectAttempts = 5,
     reconnectDelay = 1000,

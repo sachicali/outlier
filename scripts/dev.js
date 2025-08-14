@@ -8,9 +8,9 @@ const rootDir = resolve(import.meta.dir, '..');
 
 // Starting YouTube Outlier Discovery Tool in development mode
 
-// Start server
-const server = spawn('bun', ['run', 'dev'], {
-  cwd: resolve(rootDir, 'server'),
+// Start server (Python)
+const server = spawn('uv', ['run', 'python', 'src/index.py'], {
+  cwd: resolve(rootDir, 'server-python'),
   stdio: 'inherit',
   shell: true,
 });

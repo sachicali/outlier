@@ -8,12 +8,13 @@ interface User {
   username: string;
   email: string;
   role: 'user' | 'admin';
-  isActive: boolean;
+  isEmailVerified: boolean;
+  twoFactorEnabled: boolean;
+  is2faVerified?: boolean;
+  backupCodesRemaining?: number;
   createdAt: string;
-  lastLoginAt?: string;
-  two_factor_enabled?: boolean;
-  two_factor_enabled_at?: string;
-  backup_codes_count?: number;
+  updatedAt?: string;
+  lastLogin?: string;
 }
 
 interface AuthState {
@@ -24,7 +25,8 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  login: (identifier: string, password: string, rememberMe?: boolean) => Promise<any>;
+  login: (identifier: string, password: string, rememberMe?: boolean, totpCode?: string) => Promise<any>;
+  complete2FALogin: (sessionId: string, totpCode: string) => Promise<any>;
   register: (username: string, email: string, password: string, confirmPassword: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
@@ -181,37 +183,65 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const login = async (identifier: string, password: string, rememberMe = false) => {
+  const login = async (identifier: string, password: string, rememberMe = false, totpCode?: string) => {
     dispatch({ type: 'AUTH_START' });
     
     try {
       const response = await axios.post('/api/auth/login', {
-        identifier,
+        username: identifier, // API expects 'username' field
         password,
         rememberMe,
+        totpCode,
       });
 
       // Check if 2FA is required
-      if (response.data.requires2FA) {
+      if (response.data.requiresTwoFactor) {
         dispatch({ type: 'CLEAR_ERROR' }); // Clear loading state but don't set authenticated
         return {
-          requires2FA: true,
-          user: response.data.user,
+          requiresTwoFactor: true,
+          sessionId: response.data.sessionId,
           message: response.data.message,
         };
       }
 
       // Normal login success
-      accessToken = response.data.accessToken;
+      if (response.data.tokens) {
+        accessToken = response.data.tokens.accessToken;
+        dispatch({ type: 'AUTH_SUCCESS', payload: response.data.user });
+        
+        toast.success('Login successful!');
+        return {
+          requiresTwoFactor: false,
+          user: response.data.user,
+        };
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Login failed';
+      dispatch({ type: 'AUTH_ERROR', payload: errorMessage });
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
+
+  const complete2FALogin = async (sessionId: string, totpCode: string) => {
+    dispatch({ type: 'AUTH_START' });
+    
+    try {
+      const response = await axios.post('/api/auth/2fa/verify', {
+        sessionId,
+        totpCode,
+      });
+
+      accessToken = response.data.tokens.accessToken;
       dispatch({ type: 'AUTH_SUCCESS', payload: response.data.user });
       
-      toast.success('Login successful!');
+      toast.success('2FA verification successful!');
       return {
-        requires2FA: false,
         user: response.data.user,
+        tokens: response.data.tokens,
       };
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Login failed';
+      const errorMessage = error.response?.data?.error || '2FA verification failed';
       dispatch({ type: 'AUTH_ERROR', payload: errorMessage });
       toast.error(errorMessage);
       throw error;
@@ -229,12 +259,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         confirmPassword,
       });
 
-      accessToken = response.data.accessToken;
-      dispatch({ type: 'AUTH_SUCCESS', payload: response.data.user });
-      
-      toast.success('Registration successful!');
+      if (response.data.tokens) {
+        accessToken = response.data.tokens.accessToken;
+        dispatch({ type: 'AUTH_SUCCESS', payload: response.data.user });
+        
+        toast.success('Registration successful!');
+      }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Registration failed';
+      const errorMessage = error.response?.data?.error || 'Registration failed';
       dispatch({ type: 'AUTH_ERROR', payload: errorMessage });
       toast.error(errorMessage);
       throw error;
@@ -256,8 +288,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const refreshToken = async () => {
     try {
       const response = await axios.post('/api/auth/refresh');
-      accessToken = response.data.accessToken;
-      dispatch({ type: 'AUTH_SUCCESS', payload: response.data.user });
+      if (response.data.tokens) {
+        accessToken = response.data.tokens.accessToken;
+        dispatch({ type: 'AUTH_SUCCESS', payload: response.data.user });
+      }
     } catch (error) {
       accessToken = null;
       dispatch({ type: 'AUTH_LOGOUT' });
@@ -268,10 +302,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const updateProfile = async (data: { username?: string; email?: string }) => {
     try {
       const response = await axios.put('/api/auth/profile', data);
-      dispatch({ type: 'UPDATE_USER', payload: response.data.user });
+      dispatch({ type: 'UPDATE_USER', payload: response.data });
       toast.success('Profile updated successfully');
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Profile update failed';
+      const errorMessage = error.response?.data?.error || 'Profile update failed';
       toast.error(errorMessage);
       throw error;
     }
@@ -290,7 +324,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       dispatch({ type: 'AUTH_LOGOUT' });
       toast.success('Password changed successfully. Please log in again.');
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Password change failed';
+      const errorMessage = error.response?.data?.error || 'Password change failed';
       toast.error(errorMessage);
       throw error;
     }
@@ -303,6 +337,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextType = {
     ...state,
     login,
+    complete2FALogin,
     register,
     logout,
     refreshToken,

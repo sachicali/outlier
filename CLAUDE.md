@@ -8,20 +8,27 @@ YouTube Outlier Discovery Tool - An intelligent web application for content crea
 
 ## Tech Stack
 
-**Runtime**: Bun (v1.0.0+) - JavaScript/TypeScript runtime with built-in tooling
+**Frontend Runtime**: Bun (v1.0.0+) - JavaScript/TypeScript runtime with built-in tooling
 **Frontend**: Next.js 14, React 18, TypeScript (strict mode disabled), Tailwind CSS, Socket.IO Client, Lucide Icons
-**Backend**: Express with Bun runtime, JavaScript ES6+, YouTube Data API v3, Redis, PostgreSQL (optional), Socket.IO, Winston logging
-**Queue System**: BullMQ with Redis backend for background job processing
-**Authentication**: JWT-based auth with refresh tokens, bcrypt password hashing, role-based access control (RBAC)
-**Security**: Helmet.js, CORS, rate limiting, input validation, httpOnly cookies
+**Backend Runtime**: Python 3.9+ with uv for package management
+**Backend**: FastAPI/Flask, Python 3.9+, YouTube Data API v3, Redis, PostgreSQL (optional), Socket.IO, Winston logging
+**Queue System**: Redis-based background job processing
+**Authentication**: JWT-based auth with refresh tokens, bcrypt password hashing, role-based access control (RBAC), Two-Factor Authentication (TOTP)
+**Security**: Helmet.js, CORS, rate limiting, input validation, httpOnly cookies, encrypted secrets, account lockout protection
 
 ## Essential Commands
 
 ### Development
 ```bash
+# Start both frontend and backend
 bun run dev          # Start both client (port 3000) and server (port 5000)
-bun run client:dev   # Frontend only
-bun run server:dev   # Backend only with hot reload
+
+# Individual services
+bun run client:dev   # Frontend only (Next.js with Bun)
+cd server-python && uv run python src/index.py  # Backend only (Python with uv)
+# Or: cd server-python && python src/index.py
+
+# Background workers
 bun run worker:dev   # Start queue workers with hot reload
 bun run worker:start # Start queue workers in production
 ```
@@ -34,22 +41,35 @@ bun start            # Start production server
 
 ### Code Quality
 ```bash
+# Frontend (Bun)
 bun run lint         # Run ESLint on entire codebase
 bun run format       # Format with Prettier
-bun test             # Run Bun's built-in test runner (note: no tests currently implemented)
-
-# Component-specific linting
+bun test             # Run Bun's built-in test runner
 cd client && bun run lint    # Next.js specific linting
-cd server && bun run lint    # Server linting with --fix
+
+# Backend (Python with uv)
+cd server-python
+uv run black src/    # Format Python code
+uv run flake8 src/   # Lint Python code
+uv run pytest tests/ -v  # Run Python tests
+# Or with pip:
+python -m black src/
+python -m flake8 src/
+python -m pytest tests/ -v
 ```
 
 ### Installation
 ```bash
-bun run install:all  # Install all dependencies (root, client, server)
-# Or individually:
-bun install          # Root dependencies
+# Frontend (uses Bun)
 cd client && bun install
-cd server && bun install
+
+# Backend (uses uv)
+cd server-python && uv sync
+# Or with pip if uv not available:
+cd server-python && pip install -r requirements.txt
+
+# Root dependencies
+bun install
 ```
 
 ### Queue System
@@ -60,27 +80,41 @@ bun run queue:dashboard        # Interactive queue monitoring dashboard
 
 ### Database Management (when PostgreSQL is configured)
 ```bash
-cd server
-bun run db:migrate    # Run migrations
-bun run db:rollback   # Rollback migrations
-bun run db:reset      # Reset database
-bun run db:sync       # Sync models
-bun run db:test       # Test connection
+cd server-python
+
+# Run migrations
+python migrations/002_add_2fa_fields.py up
+
+# Check migration status
+python migrations/002_add_2fa_fields.py status
+
+# Rollback migrations
+python migrations/002_add_2fa_fields.py down
 ```
 
 ### Content Configuration Management
 ```bash
-cd server
-bun run config:view      # View current configuration
-bun run config:validate  # Validate configuration
-bun run config:reset     # Reset to defaults
-bun run config:export    # Export configuration to JSON
-bun run config:help      # Show configuration help
+cd server-python
 
-# Advanced configuration management
-node src/scripts/configManager.js update-queries queries.json  # Update search queries
-node src/scripts/configManager.js update-patterns patterns.json # Update game patterns
-node src/scripts/configManager.js import config-backup.json     # Import configuration
+# Generate system keys for production
+python src/utils/crypto_utils.py generate-keys
+
+# Test encryption utilities
+python src/utils/crypto_utils.py test-encryption
+
+# Test password hashing
+python src/utils/crypto_utils.py test-password
+```
+
+### Two-Factor Authentication Management
+```bash
+cd server-python
+
+# Check 2FA system status
+python -c "from src.services.two_factor_service import TwoFactorService; print('2FA service ready')"
+
+# Run 2FA tests
+python -m pytest tests/test_two_factor.py -v
 ```
 
 ## Architecture
@@ -115,18 +149,24 @@ node src/scripts/configManager.js import config-backup.json     # Import configu
 
 ## Key Files & Directories
 
-### Client (`/client`)
+### Client (`/client`) - Next.js with Bun
 - `components/YouTubeOutlierApp.tsx`: Main UI component with configuration panel and results dashboard
-- `components/auth/`: Login and registration forms
+- `components/auth/`: Authentication components including 2FA
+  - `LoginForm.tsx`: Enhanced login with 2FA support
+  - `TwoFactorSetup.tsx`: Complete 2FA setup wizard with QR codes
+  - `TwoFactorVerification.tsx`: 2FA verification during login
+  - `TwoFactorManagement.tsx`: 2FA management interface
+  - `RegisterForm.tsx`: User registration form
 - `components/ErrorBoundary.tsx`: React error boundary for graceful error handling
-- `contexts/AuthContext.tsx`: JWT token management and user state
+- `contexts/AuthContext.tsx`: JWT token management, user state, and 2FA support
 - `contexts/ErrorContext.tsx`: Global error handling with toast notifications
 - `hooks/useWebSocket.tsx`: Socket.IO connection management with auto-reconnect
 - `utils/apiClient.ts`: Axios instance with auth interceptors
 - TypeScript with `strict: false` in tsconfig.json
 - Tailwind CSS for styling
 
-### Server (`/server`)
+### Server (`/server`) - Legacy Node.js/Bun Implementation
+- **NOTE**: This directory contains the legacy implementation. Current development uses `/server-python`
 - `src/index.js`: Express app setup with Socket.IO integration
 - `src/services/youtubeService.js`: YouTube API integration with caching layer
 - `src/services/outlierDetectionService.js`: Core outlier detection algorithm (now configurable)
@@ -142,10 +182,36 @@ node src/scripts/configManager.js import config-backup.json     # Import configu
 - `src/utils/logger.js`: Winston logger with file rotation
 - `logs/`: Application logs (combined.log, error.log)
 
-### Server Python (`/server-python`)
-- Partial Python implementation using FastAPI (migration in progress)
-- `src/services/`: Python versions of core services
+### Server Python (`/server-python`) - Primary Backend with uv
+- **Primary backend implementation** using Flask/FastAPI with Python 3.9+
+- `src/index.py`: Flask application entry point
+- `src/services/`: Core business logic services
+  - `auth_service.py`: Enhanced authentication with 2FA support
+  - `two_factor_service.py`: Complete TOTP 2FA implementation
+  - `youtube_service.py`: YouTube API integration
+  - `outlier_detection_service.py`: Core outlier detection algorithm
+- `src/routes/`: API endpoint definitions
+  - `auth.py`: Authentication endpoints
+  - `two_factor.py`: 2FA management endpoints
+  - `channels.py`: Channel analysis endpoints
+  - `outlier.py`: Outlier detection endpoints
+- `src/middleware/`: Request processing middleware
+  - `auth.py`: JWT validation and 2FA verification
+  - `rbac.py`: Role-based access control
+  - `error_handler.py`: Global error handling
+- `src/models/`: Database models
+  - `user.py`: User model with 2FA fields
+  - `analysis.py`: Analysis tracking model
+- `src/utils/`: Utility modules
+  - `crypto_utils.py`: Encryption, hashing, and security utilities
+  - `logger.py`: Logging configuration
+- `migrations/`: Database migration scripts
+  - `002_add_2fa_fields.py`: 2FA database schema migration
+- `tests/`: Comprehensive test suite
+  - `test_two_factor.py`: 2FA implementation tests
 - `requirements.txt`: Python dependencies
+- `pyproject.toml`: uv configuration
+- `uv.lock`: Locked dependency versions
 
 ### Memory Bank (`/memory-bank`)
 - `productContext.md`: Product vision and user personas
@@ -191,6 +257,10 @@ BCRYPT_ROUNDS=12                          # Password hashing rounds
 SESSION_SECRET=your-session-secret
 API_RATE_LIMIT=100                        # Requests per window
 API_RATE_WINDOW=900000                    # 15 minutes in ms
+
+# Two-Factor Authentication (2FA)
+TWO_FACTOR_ENCRYPTION_KEY=your-32-byte-base64-key  # Generate with crypto_utils.py
+# Use: python server-python/src/utils/crypto_utils.py generate-keys
 
 # Logging
 LOG_LEVEL=info
@@ -365,13 +435,25 @@ Always update this file when making significant changes to the codebase, includi
 
 This ensures future Claude Code instances have accurate, up-to-date information about the codebase.
 
-## Bun Migration Notes
+## Runtime & Package Management
 
-- The project now uses Bun as the JavaScript runtime instead of Node.js
-- Bun provides faster installation, built-in TypeScript support, and integrated test runner
-- All npm commands have been replaced with bun equivalents
-- Hot reload is built into Bun (no need for nodemon)
-- Configuration is in bunfig.toml for Bun-specific settings
+### Frontend (Bun)
+- Uses Bun as the JavaScript runtime for faster performance
+- Built-in TypeScript support and integrated test runner
+- Hot reload capabilities without additional tools
+- Configuration in bunfig.toml
+
+### Backend (Python with uv)
+- Python 3.9+ backend with uv for fast package management
+- uv provides faster dependency resolution and installation
+- Fallback to pip if uv is not available
+- Virtual environment management through uv or venv
+
+### Migration Notes
+- Frontend migrated from Node.js to Bun for performance
+- Backend implementation moved from Node.js/Express to Python/Flask
+- Package management: Bun for frontend, uv for backend
+- Both runtimes provide excellent development experience with hot reload
 
 ## Recent Major Implementations (2025)
 
@@ -394,6 +476,11 @@ This ensures future Claude Code instances have accurate, up-to-date information 
    - Role-based access control (RBAC)
    - Per-user API key management
    - Secure password policies and session management
+   - **Two-Factor Authentication (2FA)**
+     - TOTP implementation with QR code setup
+     - Backup codes for account recovery
+     - Rate limiting and account lockout protection
+     - Encrypted secret storage
 
 4. **Advanced Error Handling**
    - React Error Boundaries with fallback UIs
@@ -407,6 +494,11 @@ This ensures future Claude Code instances have accurate, up-to-date information 
    - CSRF protection and security headers
    - Secrets management with encryption
    - Security monitoring and audit trails
+   - **2FA Security Features**
+     - AES-256 encryption for sensitive data
+     - Constant-time comparison for sensitive operations
+     - Session invalidation on security changes
+     - Comprehensive audit logging
 
 6. **Monitoring & Observability**
    - OpenTelemetry distributed tracing
@@ -421,9 +513,61 @@ This ensures future Claude Code instances have accurate, up-to-date information 
    - Vercel (frontend) and Railway (backend) deployment
    - Docker containerization support
 
+## Two-Factor Authentication (2FA) System
+
+### ✅ Complete Implementation
+
+A comprehensive 2FA system has been implemented with enterprise-grade security:
+
+#### Backend Features
+- **TOTP Implementation**: RFC 6238 compliant with 30-second windows
+- **QR Code Generation**: Automatic QR codes for authenticator app setup
+- **Backup Codes**: 10 single-use recovery codes per user
+- **Encrypted Storage**: All secrets encrypted at rest with AES-256
+- **Rate Limiting**: Protection against brute force attacks
+- **Account Lockout**: Temporary lockout after failed attempts
+- **Session Security**: Secure temporary sessions for 2FA flow
+
+#### Frontend Components
+- **TwoFactorSetup**: Complete setup wizard with QR code display
+- **TwoFactorVerification**: Login verification with TOTP/backup codes
+- **TwoFactorManagement**: Full management interface for users
+- **Enhanced LoginForm**: Seamless 2FA integration
+
+#### Security Features
+- Encrypted TOTP secrets and backup codes
+- Rate limiting (5 attempts per 15 minutes)
+- Account lockout protection
+- Audit logging for all 2FA events
+- Session invalidation on security changes
+- Constant-time comparison for sensitive operations
+
+#### API Endpoints
+- `POST /api/auth/2fa/setup` - Initialize 2FA setup
+- `POST /api/auth/2fa/enable` - Enable 2FA after verification
+- `POST /api/auth/2fa/verify` - Verify TOTP during login
+- `POST /api/auth/2fa/recovery` - Login with backup code
+- `POST /api/auth/2fa/disable` - Disable 2FA with password
+- `POST /api/auth/2fa/backup-codes` - Regenerate backup codes
+- `GET /api/auth/2fa/status` - Get 2FA status
+
+#### Testing
+- Comprehensive test suite in `server-python/tests/test_two_factor.py`
+- Unit tests for all 2FA services
+- Integration tests for complete flows
+- Security testing for rate limiting and encryption
+
+#### Documentation
+- Complete implementation guide: `server-python/2FA_IMPLEMENTATION.md`
+- Security considerations and best practices
+- API reference and usage examples
+- Troubleshooting and maintenance guides
+
 ### 🚧 Remaining Tasks
 
 - Advanced features (historical data analysis, scheduling)
 - UI/UX enhancements (dark mode, improved loading states)
 - API flexibility improvements
-- Bun's test runner is configured but awaiting test implementation
+- Frontend test implementation with Bun
+- Hardware Security Key (WebAuthn) support
+- SMS backup option (with security warnings)

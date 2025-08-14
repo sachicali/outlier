@@ -27,7 +27,7 @@ class ApiClient {
 
   constructor(config: ApiClientConfig = {}) {
     const {
-      baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+      baseURL = 'http://localhost:5000', // Python backend default
       timeout = 30000,
       retry = {},
       enableCorrelationId = true

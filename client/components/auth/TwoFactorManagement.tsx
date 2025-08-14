@@ -5,9 +5,11 @@ import TwoFactorSetup from './TwoFactorSetup';
 
 interface TwoFactorStatus {
   enabled: boolean;
-  enabledAt: string | null;
-  backupCodesCount: number;
-  hasBackupCodes: boolean;
+  backupCodes: {
+    total: number;
+    used: number;
+    remaining: number;
+  };
 }
 
 const TwoFactorManagement: React.FC = () => {
@@ -32,10 +34,7 @@ const TwoFactorManagement: React.FC = () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/auth/2fa/status');
-      
-      if (response.data.success) {
-        setStatus(response.data.data);
-      }
+      setStatus(response.data);
     } catch (err: any) {
       setError('Failed to fetch 2FA status');
     } finally {
@@ -57,20 +56,18 @@ const TwoFactorManagement: React.FC = () => {
         password: disablePassword,
       });
 
-      if (response.data.success) {
-        setStatus({
-          enabled: false,
-          enabledAt: null,
-          backupCodesCount: 0,
-          hasBackupCodes: false,
-        });
-        setShowDisableForm(false);
-        setDisablePassword('');
-      } else {
-        setError(response.data.message || 'Failed to disable 2FA');
-      }
+      setStatus({
+        enabled: false,
+        backupCodes: {
+          total: 0,
+          used: 0,
+          remaining: 0,
+        },
+      });
+      setShowDisableForm(false);
+      setDisablePassword('');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to disable 2FA');
+      setError(err.response?.data?.error || 'Failed to disable 2FA');
     } finally {
       setLoading(false);
     }
@@ -86,23 +83,20 @@ const TwoFactorManagement: React.FC = () => {
       setLoading(true);
       setError('');
 
-      const response = await apiClient.post('/auth/2fa/regenerate-backup-codes', {
-        password: backupPassword,
-      });
+      const response = await apiClient.post('/auth/2fa/backup-codes');
 
-      if (response.data.success) {
-        setNewBackupCodes(response.data.data.backupCodes);
-        setStatus(prev => prev ? {
-          ...prev,
-          backupCodesCount: response.data.data.backupCodes.length,
-          hasBackupCodes: true,
-        } : null);
-        setBackupPassword('');
-      } else {
-        setError(response.data.message || 'Failed to regenerate backup codes');
-      }
+      setNewBackupCodes(response.data.backupCodes);
+      setStatus(prev => prev ? {
+        ...prev,
+        backupCodes: {
+          total: response.data.backupCodes.length,
+          used: 0,
+          remaining: response.data.backupCodes.length,
+        },
+      } : null);
+      setBackupPassword('');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to regenerate backup codes');
+      setError(err.response?.data?.error || 'Failed to regenerate backup codes');
     } finally {
       setLoading(false);
     }
@@ -180,7 +174,7 @@ const TwoFactorManagement: React.FC = () => {
                     <div>
                       <p className="font-medium text-gray-900">2FA Enabled</p>
                       <p className="text-sm text-gray-500">
-                        Enabled on {status.enabledAt ? new Date(status.enabledAt).toLocaleDateString() : 'Unknown'}
+                        Your account is protected with 2FA
                       </p>
                     </div>
                   </>
@@ -218,7 +212,7 @@ const TwoFactorManagement: React.FC = () => {
                     <div>
                       <p className="font-medium text-gray-900">Backup Codes</p>
                       <p className="text-sm text-gray-500">
-                        {status.backupCodesCount} backup codes remaining
+                        {status.backupCodes.remaining} backup codes remaining
                       </p>
                     </div>
                   </div>
@@ -231,10 +225,10 @@ const TwoFactorManagement: React.FC = () => {
                   </button>
                 </div>
 
-                {status.backupCodesCount <= 2 && status.hasBackupCodes && (
+                {status.backupCodes.remaining <= 2 && status.backupCodes.total > 0 && (
                   <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
                     <p className="text-sm text-yellow-700">
-                      ⚠️ You have {status.backupCodesCount} backup codes remaining. 
+                      ⚠️ You have {status.backupCodes.remaining} backup codes remaining. 
                       Consider regenerating new codes.
                     </p>
                   </div>

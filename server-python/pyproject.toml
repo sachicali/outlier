@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "youtube-outlier-discovery-server"
+description = "Python backend for YouTube Outlier Discovery Tool"
+readme = "README.md"
+authors = [
+    {name = "Your Name", email = "your.email@example.com"},
+]
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+requires-python = ">=3.8.1"
+dependencies = [
+    "Flask>=2.3.2",
+    "python-dotenv>=1.0.0",
+    "google-api-python-client>=2.86.0",
+    "redis>=4.5.4",
+    "Flask-Cors>=3.0.10",
+    "Flask-Talisman>=1.1.0",
+    "PyJWT>=2.7.0",
+    "SQLAlchemy>=2.0.0",
+    "bcrypt>=4.0.1",
+    "cryptography>=41.0.3",
+    "pyotp>=2.9.0",
+    "qrcode[pil]>=7.4.2",
+    "Flask-Limiter>=3.5.0",
+    "openpyxl>=3.1.2",
+    "reportlab>=4.0.4",
+    "jinja2>=3.1.2",
+    "matplotlib>=3.7.2",
+    "seaborn>=0.12.2",
+    "pandas>=2.0.3",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "black>=23.3.0",
+    "flake8>=6.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/youtube-outlier-discovery"
+Repository = "https://github.com/yourusername/youtube-outlier-discovery.git"
+
+[project.scripts]
+outlier-server = "src.index:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"

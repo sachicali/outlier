@@ -81,7 +81,7 @@ describe('YouTubeOutlierApp', () => {
     it('should initialize socket connection', () => {
       render(<YouTubeOutlierApp />);
       
-      expect(io).toHaveBeenCalledWith(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001');
+  expect(io).toHaveBeenCalledWith(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000');
     });
 
     it('should display default configuration values', () => {
@@ -152,7 +152,7 @@ describe('YouTubeOutlierApp', () => {
       await user.click(startButton);
       
       expect(axios.post).toHaveBeenCalledWith(
-        'http://localhost:3001/api/outlier/start',
+  'http://localhost:5000/api/outlier/start',
         expect.objectContaining({
           exclusionChannels: expect.any(Array),
           minSubs: expect.any(Number),
@@ -339,7 +339,7 @@ describe('YouTubeOutlierApp', () => {
       await user.click(exportButton);
       
       expect(axios.get).toHaveBeenCalledWith(
-        'http://localhost:3001/api/outlier/export/test-analysis-id',
+  'http://localhost:5000/api/outlier/export/test-analysis-id',
         { responseType: 'blob' }
       );
     });

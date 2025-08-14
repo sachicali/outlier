@@ -1,0 +1,2 @@
+[console_scripts]
+outlier-server = src.index:main

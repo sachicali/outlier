@@ -10,7 +10,7 @@ interface TwoFactorSetupProps {
 interface SetupData {
   qrCode: string;
   manualEntryKey: string;
-  appName: string;
+  backupCodes: string[];
 }
 
 const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCancel }) => {
@@ -37,14 +37,15 @@ const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCancel })
       
       const response = await apiClient.post('/auth/2fa/setup');
       
-      if (response.data.success) {
-        setSetupData(response.data.data);
-        setSecret(response.data.data.manualEntryKey);
-      } else {
-        setError(response.data.message || 'Failed to generate setup data');
-      }
+      setSetupData({
+        qrCode: response.data.qrCode,
+        manualEntryKey: response.data.manualEntryKey,
+        backupCodes: response.data.backupCodes
+      });
+      setSecret(response.data.manualEntryKey);
+      setBackupCodes(response.data.backupCodes);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to generate 2FA setup');
+      setError(err.response?.data?.error || 'Failed to generate 2FA setup');
     } finally {
       setLoading(false);
     }
@@ -60,19 +61,15 @@ const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCancel })
       setLoading(true);
       setError('');
       
-      const response = await apiClient.post('/auth/2fa/verify-and-enable', {
-        token: verificationCode,
+      const response = await apiClient.post('/auth/2fa/enable', {
+        verificationCode: verificationCode,
         secret: secret,
+        backupCodes: backupCodes
       });
       
-      if (response.data.success) {
-        setBackupCodes(response.data.data.backupCodes);
-        setStep('backup');
-      } else {
-        setError(response.data.message || 'Invalid verification code');
-      }
+      setStep('backup');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to enable 2FA');
+      setError(err.response?.data?.error || 'Failed to enable 2FA');
     } finally {
       setLoading(false);
     }

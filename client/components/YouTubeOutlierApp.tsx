@@ -13,7 +13,7 @@ import EmptyState from './ui/EmptyStates';
 import VideoResultCard from './ui/VideoResultCard';
 import { HelpTooltip } from './ui/Tooltip';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 interface AnalysisConfig {
   exclusionChannels: string[];

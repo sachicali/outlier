@@ -19,7 +19,7 @@ export default function TestPage() {
     // Test API connection
     const testAPI = async () => {
       try {
-        const response = await fetch('http://localhost:3001/health');
+  const response = await fetch('http://localhost:5000/health');
         const data = await response.json();
         setApiStatus(`API Working: ${data.status}`);
       } catch (error) {

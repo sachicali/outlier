@@ -1,0 +1,40 @@
+# Dependencies
+node_modules
+*/node_modules
+
+# Build outputs
+client/.next
+client/out
+server-python/.venv
+server-python/__pycache__
+server-python/*/__pycache__
+server-python/*.pyc
+server-python/*/*.pyc
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage reports
+coverage/
+*.lcov
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

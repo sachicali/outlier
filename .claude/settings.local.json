@@ -13,7 +13,14 @@
       "Bash(bun run:*)",
       "Bash(node:*)",
       "Bash(bun src/test/authFlow.test.js)",
-      "Bash(bun install:*)"
+      "Bash(bun install:*)",
+      "Bash(python:*)",
+      "Bash(uv run:*)",
+      "Bash(timeout:*)",
+      "Bash(bun:*)",
+      "Bash(echo:*)",
+      "Bash(unset NODE_ENV)",
+      "Bash(make:*)"
     ],
     "deny": []
   }

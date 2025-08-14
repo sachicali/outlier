@@ -18,10 +18,10 @@ interface LoginFormProps {
 }
 
 export default function LoginForm({ onSuccess, redirectTo = '/' }: LoginFormProps) {
-  const { login, isLoading, error } = useAuth();
+  const { login, complete2FALogin, isLoading, error } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [requires2FA, setRequires2FA] = useState(false);
-  const [userIdentifier, setUserIdentifier] = useState('');
+  const [sessionId, setSessionId] = useState('');
   
   const {
     register,
@@ -41,8 +41,8 @@ export default function LoginForm({ onSuccess, redirectTo = '/' }: LoginFormProp
       const result = await login(data.identifier, data.password, data.rememberMe);
       
       // Check if 2FA is required
-      if (result?.requires2FA) {
-        setUserIdentifier(data.identifier);
+      if (result?.requiresTwoFactor) {
+        setSessionId(result.sessionId);
         setRequires2FA(true);
         return;
       }
@@ -66,10 +66,7 @@ export default function LoginForm({ onSuccess, redirectTo = '/' }: LoginFormProp
   };
 
   const handle2FASuccess = (data: any) => {
-    // Store tokens and user data
-    localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
-    
+    // Tokens are handled by AuthContext
     if (onSuccess) {
       onSuccess();
     } else {
@@ -79,14 +76,14 @@ export default function LoginForm({ onSuccess, redirectTo = '/' }: LoginFormProp
 
   const handle2FACancel = () => {
     setRequires2FA(false);
-    setUserIdentifier('');
+    setSessionId('');
   };
 
   // Show 2FA verification if required
   if (requires2FA) {
     return (
       <TwoFactorVerification
-        identifier={userIdentifier}
+        sessionId={sessionId}
         onSuccess={handle2FASuccess}
         onCancel={handle2FACancel}
       />
